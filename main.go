@@ -28,6 +28,54 @@ func DBConn() (db *sql.DB) {
 	return db
 }
 
+func sentence(db *sql.DB, word string) error {
+	// Get the unfinished sentence id
+	sentenceStmt, err := db.Query("select IFNULL(max(sentence_id), 0) from sentence group by sentence_id having count(word) < 15 order by sentence_id desc;")
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+	var sentenceID int
+	if sentenceStmt.Next() {
+		err = sentenceStmt.Scan(&sentenceID)
+		if err != nil {
+			log.Println(err.Error())
+			return err
+		}
+	}
+
+	// Get the max value
+	if sentenceID == 0 {
+		maxSentenceStmt, err := db.Query("select IFNULL(max(sentence_id), 0) from sentence;")
+		if err != nil {
+			log.Println(err.Error())
+			return err
+		}
+		if maxSentenceStmt.Next() {
+			err = maxSentenceStmt.Scan(&sentenceID)
+			if err != nil {
+				log.Println(err.Error())
+				return err
+			}
+		}
+		// Create next sentence
+		sentenceID++
+	}
+	addSentence, err := db.Prepare("insert into sentence values (?, ?)")
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+
+	_, err = addSentence.Exec(sentenceID, word)
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+
+	return nil
+}
+
 // AddWord adds word to the story
 func AddWord(w http.ResponseWriter, r *http.Request) {
 	var reqWord map[string]string
@@ -43,43 +91,11 @@ func AddWord(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		sentenceStmt, err := db.Query("select IFNULL(max(sentence_id), 0) from sentence group by sentence_id having count(word) < 15 order by sentence_id desc;")
-		if err != nil {
-			panic(err.Error())
-		}
-		var sentenceID int
-		if sentenceStmt.Next() {
-			err = sentenceStmt.Scan(&sentenceID)
-			if err != nil {
-				panic(err.Error())
-			}
-		}
-
-		// Get the max value
-		if sentenceID == 0 {
-			maxSentenceStmt, err := db.Query("select IFNULL(max(sentence_id), 0) from sentence;")
-			if err != nil {
-				panic(err.Error())
-			}
-			if maxSentenceStmt.Next() {
-				err = maxSentenceStmt.Scan(&sentenceID)
-				if err != nil {
-					panic(err.Error())
-				}
-			}
-			// Create next sentence
-			sentenceID++
-		}
-		addSentence, err := db.Prepare("insert into sentence values (?, ?)")
-		if err != nil {
-			panic(err.Error())
-		}
-
-		_, err = addSentence.Exec(sentenceID, reqWord["word"])
+		err = sentence(db, reqWord["word"])
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(`{'error': 'Internal Error'}`)
-			panic(err.Error())
+			json.NewEncoder(w).Encode(`{'error': 'Internal server error'}`)
+			return
 		}
 
 	} else {
