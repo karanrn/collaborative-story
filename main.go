@@ -86,7 +86,7 @@ func AddToParagraph(sentenceID int) (paragraphID int, err error) {
 	}
 	defer addParagraph.Close()
 
-	if startParagraph != 0 && ((sentenceID+1)-startParagraph) == 10 {
+	if startParagraph != 0 && (sentenceID-startParagraph) == 10 {
 		_, err = updateParagraph.Exec(sentenceID, paragraphID)
 		if err != nil {
 			log.Println(err.Error())
@@ -190,7 +190,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 				log.Println(err.Error())
 			}
 		}
-		log.Println("FIRST:", storyID, title, startParagraph)
+
 		// Add new story
 		addStoryStmt, err := db.Prepare("insert into story (story_id, title) values (?, ?)")
 		if err != nil {
@@ -231,7 +231,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 					log.Println(err.Error())
 				}
 			}
-			log.Println("MAX:", storyID, title, startParagraph)
+
 		}
 
 		if title == "" {
@@ -279,8 +279,8 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 	} else {
 		fmt.Fprintf(w, "Method not supported")
 	}
-
 }
+
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/add", AddToStory)
