@@ -220,7 +220,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 
 		// Get the max value
 		if storyID == 0 {
-			lastStoryStmt, err := db.Query("select IFNULL(story_id, 0), title from story where start_paragraph is null")
+			lastStoryStmt, err := db.Query("select IFNULL(story_id, 0), title from story where start_paragraph is null order by story_id desc limit 1")
 			if err != nil {
 				log.Println(err.Error())
 			}
@@ -229,6 +229,20 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 				err = lastStoryStmt.Scan(&storyID, &title)
 				if err != nil {
 					log.Println(err.Error())
+				}
+			}
+
+			if storyID == 0 {
+				maxStoryStmt, err := db.Query("select max(story_id) from story")
+				if err != nil {
+					log.Println(err.Error())
+				}
+				defer maxStoryStmt.Close()
+				if maxStoryStmt.Next() {
+					err = maxStoryStmt.Scan(&storyID)
+					if err != nil {
+						log.Println(err.Error())
+					}
 				}
 			}
 
@@ -267,7 +281,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 
-				if startParagraph != 0 && ((paragraphID+1)-startParagraph) == 7 {
+				if startParagraph != 0 && (paragraphID-startParagraph) == 7 {
 					_, err = updateEndStoryStmt.Exec(paragraphID, storyID)
 					if err != nil {
 						log.Println(err.Error())
