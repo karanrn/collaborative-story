@@ -12,6 +12,12 @@ import (
 	"CollaborativeStory/database"
 )
 
+type response struct {
+	ID              int    `json:"id"`
+	Title           string `json:"title"`
+	CurrentSentence string `json:"current_sentence"`
+}
+
 // AddToStory adds word to the story
 func AddToStory(w http.ResponseWriter, r *http.Request) {
 	var reqWord map[string]string
@@ -105,12 +111,17 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 
 		}
 
+		var storyResp response
 		if title == "" {
 			// Add title word to the new story
 			_, err = addStoryStmt.Exec(storyID+1, reqWord["word"])
 			if err != nil {
 				log.Println(err.Error())
 			}
+
+			storyResp.ID = storyID + 1
+			storyResp.Title = reqWord["word"]
+			storyResp.CurrentSentence = ""
 		} else {
 			if title != "" && len(strings.Split(title, " ")) < 2 {
 				// Update title of the story
@@ -118,6 +129,10 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					log.Println(err.Error())
 				}
+
+				storyResp.ID = storyID
+				storyResp.Title = title + " " + reqWord["word"]
+				storyResp.CurrentSentence = ""
 			} else {
 				// Add word to sentence of the story
 				sentenceID, err := sentence.AddToSentence(reqWord["word"])
@@ -150,8 +165,21 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 						log.Println(err.Error())
 					}
 				}
+
+				storyResp.ID = storyID
+				storyResp.Title = title
+				storyResp.CurrentSentence = reqWord["word"]
 			}
 		}
+
+		w.WriteHeader(http.StatusOK)
+		// Marshal the response
+		resp, err := json.Marshal(storyResp)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "Internal server error")
+		}
+		json.NewEncoder(w).Encode(string(resp))
 
 	} else {
 		// Reject all requests other than POST
