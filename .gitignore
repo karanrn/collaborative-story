@@ -2,3 +2,6 @@ reference.txt
 
 # Mysql volume
 mysql/
+
+# Bash script to test
+script.sh
