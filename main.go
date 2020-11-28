@@ -65,12 +65,14 @@ func paragraphOps(db *sql.DB, sentenceID int) (paragraphID int, err error) {
 
 	// Check the size of the paragraph and update/create paragraph
 	updateParagraph, err := db.Prepare("update paragraph set end_sentence = ? where paragraph_id = ?")
+	updateParagraph.Close()
 	if err != nil {
 		log.Println(err.Error())
 		return paragraphID, err
 	}
 
 	addParagraph, err := db.Prepare("insert into paragraph (paragraph_id, start_sentence) values (?, ?)")
+	defer addParagraph.Close()
 	if err != nil {
 		log.Println(err.Error())
 		return paragraphID, err
@@ -130,6 +132,7 @@ func sentenceOps(db *sql.DB, word string) (sentenceID int, err error) {
 		sentenceID++
 	}
 	addSentence, err := db.Prepare("insert into sentence values (?, ?)")
+	defer addSentence.Close()
 	if err != nil {
 		log.Println(err.Error())
 		return sentenceID, err
