@@ -43,7 +43,7 @@ func AddWord(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		sentenceStmt, err := db.Query("select IFNULL(max(sentence_id), 0) from sentence group by sentence_id having count(word) <= 15 order by sentence_id desc;")
+		sentenceStmt, err := db.Query("select IFNULL(max(sentence_id), 0) from sentence group by sentence_id having count(word) < 15 order by sentence_id desc;")
 		if err != nil {
 			panic(err.Error())
 		}
