@@ -28,19 +28,87 @@ func DBConn() (db *sql.DB) {
 	return db
 }
 
-func sentence(db *sql.DB, word string) error {
+func paragraphOps(db *sql.DB, sentenceID int) (paragraphID int, err error) {
+	// Get the unfinished paragraph
+	var startParagraph int
+	paragraphStmt, err := db.Query("select IFNULL(paragraph_id, 0), IFNULL(start_sentence, 0) from paragraph where start_sentence is not NULL and end_sentence is NULL;")
+	if err != nil {
+		log.Println(err.Error())
+		return paragraphID, err
+	}
+
+	if paragraphStmt.Next() {
+		err = paragraphStmt.Scan(&paragraphID, &startParagraph)
+		if err != nil {
+			log.Println(err.Error())
+			return paragraphID, err
+		}
+	}
+
+	// Get the max value
+	if paragraphID == 0 {
+		maxParagraphStmt, err := db.Query("select IFNULL(max(paragraph_id), 0) from paragraph;")
+		if err != nil {
+			log.Println(err.Error())
+			return paragraphID, err
+		}
+		if maxParagraphStmt.Next() {
+			err = maxParagraphStmt.Scan(&paragraphID)
+			if err != nil {
+				log.Println(err.Error())
+				return paragraphID, err
+			}
+		}
+		// Create next sentence
+		paragraphID++
+	}
+
+	// Check the size of the paragraph and update/create paragraph
+	updateParagraph, err := db.Prepare("update paragraph set end_sentence = ? where paragraph_id = ?")
+	if err != nil {
+		log.Println(err.Error())
+		return paragraphID, err
+	}
+
+	addParagraph, err := db.Prepare("insert into paragraph (paragraph_id, start_sentence) values (?, ?)")
+	if err != nil {
+		log.Println(err.Error())
+		return paragraphID, err
+	}
+
+	if startParagraph != 0 && ((sentenceID+1)-startParagraph) == 10 {
+		_, err = updateParagraph.Exec(sentenceID, paragraphID)
+		if err != nil {
+			log.Println(err.Error())
+			return paragraphID, err
+		}
+	}
+
+	if startParagraph == 0 {
+		_, err = addParagraph.Exec(paragraphID, sentenceID)
+		if err != nil {
+			log.Println(err.Error())
+			return paragraphID, err
+		}
+	}
+
+	return paragraphID, nil
+}
+
+// All the operations for sentence
+func sentenceOps(db *sql.DB, word string) (sentenceID int, err error) {
 	// Get the unfinished sentence id
 	sentenceStmt, err := db.Query("select IFNULL(max(sentence_id), 0) from sentence group by sentence_id having count(word) < 15 order by sentence_id desc;")
 	if err != nil {
 		log.Println(err.Error())
-		return err
+		return sentenceID, err
 	}
-	var sentenceID int
+	//var sentenceID int
 	if sentenceStmt.Next() {
 		err = sentenceStmt.Scan(&sentenceID)
 		if err != nil {
 			log.Println(err.Error())
-			return err
+			return sentenceID, err
 		}
 	}
 
@@ -49,13 +117,13 @@ func sentence(db *sql.DB, word string) error {
 		maxSentenceStmt, err := db.Query("select IFNULL(max(sentence_id), 0) from sentence;")
 		if err != nil {
 			log.Println(err.Error())
-			return err
+			return sentenceID, err
 		}
 		if maxSentenceStmt.Next() {
 			err = maxSentenceStmt.Scan(&sentenceID)
 			if err != nil {
 				log.Println(err.Error())
-				return err
+				return sentenceID, err
 			}
 		}
 		// Create next sentence
@@ -64,16 +132,16 @@ func sentence(db *sql.DB, word string) error {
 	addSentence, err := db.Prepare("insert into sentence values (?, ?)")
 	if err != nil {
 		log.Println(err.Error())
-		return err
+		return sentenceID, err
 	}
 
 	_, err = addSentence.Exec(sentenceID, word)
 	if err != nil {
 		log.Println(err.Error())
-		return err
+		return sentenceID, err
 	}
 
-	return nil
+	return sentenceID, nil
 }
 
 // AddWord adds word to the story
@@ -91,7 +159,14 @@ func AddWord(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = sentence(db, reqWord["word"])
+		sentenceID, err := sentenceOps(db, reqWord["word"])
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(`{'error': 'Internal server error'}`)
+			return
+		}
+
+		_, err = paragraphOps(db, sentenceID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(`{'error': 'Internal server error'}`)
