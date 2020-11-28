@@ -7,11 +7,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
 const (
+	// mysql database driver
 	dbDriver = "mysql"
 )
 
@@ -28,7 +30,12 @@ func DBConn() (db *sql.DB) {
 	return db
 }
 
-func paragraphOps(db *sql.DB, sentenceID int) (paragraphID int, err error) {
+// AddToParagraph adds sentence to a paragraph
+func AddToParagraph(sentenceID int) (paragraphID int, err error) {
+	// DB Connection
+	db := DBConn()
+	defer db.Close()
+
 	// Get the unfinished paragraph
 	var startParagraph int
 	paragraphStmt, err := db.Query("select IFNULL(paragraph_id, 0), IFNULL(start_sentence, 0) from paragraph where start_sentence is not NULL and end_sentence is NULL;")
@@ -36,7 +43,7 @@ func paragraphOps(db *sql.DB, sentenceID int) (paragraphID int, err error) {
 		log.Println(err.Error())
 		return paragraphID, err
 	}
-
+	defer paragraphStmt.Close()
 	if paragraphStmt.Next() {
 		err = paragraphStmt.Scan(&paragraphID, &startParagraph)
 		if err != nil {
@@ -47,36 +54,37 @@ func paragraphOps(db *sql.DB, sentenceID int) (paragraphID int, err error) {
 
 	// Get the max value
 	if paragraphID == 0 {
-		maxParagraphStmt, err := db.Query("select IFNULL(max(paragraph_id), 0) from paragraph;")
+		lastParagraphStmt, err := db.Query("select IFNULL(max(paragraph_id), 0) from paragraph;")
 		if err != nil {
 			log.Println(err.Error())
 			return paragraphID, err
 		}
-		if maxParagraphStmt.Next() {
-			err = maxParagraphStmt.Scan(&paragraphID)
+		defer lastParagraphStmt.Close()
+		if lastParagraphStmt.Next() {
+			err = lastParagraphStmt.Scan(&paragraphID)
 			if err != nil {
 				log.Println(err.Error())
 				return paragraphID, err
 			}
 		}
-		// Create next sentence
+		// Create next paragraph
 		paragraphID++
 	}
 
 	// Check the size of the paragraph and update/create paragraph
 	updateParagraph, err := db.Prepare("update paragraph set end_sentence = ? where paragraph_id = ?")
-	updateParagraph.Close()
 	if err != nil {
 		log.Println(err.Error())
 		return paragraphID, err
 	}
+	defer updateParagraph.Close()
 
 	addParagraph, err := db.Prepare("insert into paragraph (paragraph_id, start_sentence) values (?, ?)")
-	defer addParagraph.Close()
 	if err != nil {
 		log.Println(err.Error())
 		return paragraphID, err
 	}
+	defer addParagraph.Close()
 
 	if startParagraph != 0 && ((sentenceID+1)-startParagraph) == 10 {
 		_, err = updateParagraph.Exec(sentenceID, paragraphID)
@@ -97,15 +105,19 @@ func paragraphOps(db *sql.DB, sentenceID int) (paragraphID int, err error) {
 	return paragraphID, nil
 }
 
-// All the operations for sentence
-func sentenceOps(db *sql.DB, word string) (sentenceID int, err error) {
+// AddToSentence adds words to form a sentence
+func AddToSentence(word string) (sentenceID int, err error) {
+	// DB Connection
+	db := DBConn()
+	defer db.Close()
+
 	// Get the unfinished sentence id
 	sentenceStmt, err := db.Query("select IFNULL(max(sentence_id), 0) from sentence group by sentence_id having count(word) < 15 order by sentence_id desc;")
 	if err != nil {
 		log.Println(err.Error())
 		return sentenceID, err
 	}
-	//var sentenceID int
+	defer sentenceStmt.Close()
 	if sentenceStmt.Next() {
 		err = sentenceStmt.Scan(&sentenceID)
 		if err != nil {
@@ -116,13 +128,14 @@ func sentenceOps(db *sql.DB, word string) (sentenceID int, err error) {
 
 	// Get the max value
 	if sentenceID == 0 {
-		maxSentenceStmt, err := db.Query("select IFNULL(max(sentence_id), 0) from sentence;")
+		lastSentenceStmt, err := db.Query("select IFNULL(max(sentence_id), 0) from sentence;")
 		if err != nil {
 			log.Println(err.Error())
 			return sentenceID, err
 		}
-		if maxSentenceStmt.Next() {
-			err = maxSentenceStmt.Scan(&sentenceID)
+		defer lastSentenceStmt.Close()
+		if lastSentenceStmt.Next() {
+			err = lastSentenceStmt.Scan(&sentenceID)
 			if err != nil {
 				log.Println(err.Error())
 				return sentenceID, err
@@ -132,11 +145,11 @@ func sentenceOps(db *sql.DB, word string) (sentenceID int, err error) {
 		sentenceID++
 	}
 	addSentence, err := db.Prepare("insert into sentence values (?, ?)")
-	defer addSentence.Close()
 	if err != nil {
 		log.Println(err.Error())
 		return sentenceID, err
 	}
+	defer addSentence.Close()
 
 	_, err = addSentence.Exec(sentenceID, word)
 	if err != nil {
@@ -147,8 +160,8 @@ func sentenceOps(db *sql.DB, word string) (sentenceID int, err error) {
 	return sentenceID, nil
 }
 
-// AddWord adds word to the story
-func AddWord(w http.ResponseWriter, r *http.Request) {
+// AddToStory adds word to the story
+func AddToStory(w http.ResponseWriter, r *http.Request) {
 	var reqWord map[string]string
 
 	// DB Connection
@@ -162,18 +175,105 @@ func AddWord(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		sentenceID, err := sentenceOps(db, reqWord["word"])
+		// Get unfinished story
+		var storyID int
+		var title string
+		var startParagraph int
+		storyStmt, err := db.Query("select IFNULL(story_id, 0), title, IFNULL(start_paragraph, 0) from story where start_paragraph is not NULL and end_paragraph is NULL;")
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(`{'error': 'Internal server error'}`)
-			return
+			log.Println(err.Error())
+		}
+		defer storyStmt.Close()
+		if storyStmt.Next() {
+			err = storyStmt.Scan(&storyID, &title, &startParagraph)
+			if err != nil {
+				log.Println(err.Error())
+			}
+		}
+		log.Println("FIRST:", storyID, title, startParagraph)
+		// Add new story
+		addStoryStmt, err := db.Prepare("insert into story (story_id, title) values (?, ?)")
+		if err != nil {
+			log.Println(err.Error())
+		}
+		defer addStoryStmt.Close()
+
+		// Update title
+		updateTitleStmt, err := db.Prepare("update story set title = concat(title, \" \", ?) where story_id = ?")
+		if err != nil {
+			log.Println(err.Error())
+		}
+		defer updateTitleStmt.Close()
+
+		// Update story
+		updateStartStoryStmt, err := db.Prepare("update story set start_paragraph = ? where story_id = ?")
+		if err != nil {
+			log.Println(err.Error())
+		}
+		defer updateStartStoryStmt.Close()
+
+		updateEndStoryStmt, err := db.Prepare("update story set end_paragraph = ? where story_id = ?")
+		if err != nil {
+			log.Println(err.Error())
+		}
+		defer updateEndStoryStmt.Close()
+
+		// Get the max value
+		if storyID == 0 {
+			lastStoryStmt, err := db.Query("select IFNULL(story_id, 0), title from story where start_paragraph is null")
+			if err != nil {
+				log.Println(err.Error())
+			}
+			defer lastStoryStmt.Close()
+			if lastStoryStmt.Next() {
+				err = lastStoryStmt.Scan(&storyID, &title)
+				if err != nil {
+					log.Println(err.Error())
+				}
+			}
+			log.Println("MAX:", storyID, title, startParagraph)
 		}
 
-		_, err = paragraphOps(db, sentenceID)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(`{'error': 'Internal server error'}`)
-			return
+		if title == "" {
+			_, err = addStoryStmt.Exec(storyID+1, reqWord["word"])
+			if err != nil {
+				log.Println(err.Error())
+			}
+		} else {
+			if title != "" && len(strings.Split(title, " ")) < 2 {
+				_, err = updateTitleStmt.Exec(reqWord["word"], storyID)
+				if err != nil {
+					log.Println(err.Error())
+				}
+			} else {
+				sentenceID, err := AddToSentence(reqWord["word"])
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(`{'error': 'Internal server error'}`)
+					return
+				}
+
+				paragraphID, err := AddToParagraph(sentenceID)
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(`{'error': 'Internal server error'}`)
+					return
+				}
+
+				if startParagraph == 0 {
+					_, err = updateStartStoryStmt.Exec(paragraphID, storyID)
+					if err != nil {
+						log.Println(err.Error())
+					}
+				}
+
+				if startParagraph != 0 && ((paragraphID+1)-startParagraph) == 7 {
+					_, err = updateEndStoryStmt.Exec(paragraphID, storyID)
+					if err != nil {
+						log.Println(err.Error())
+					}
+				}
+			}
 		}
 
 	} else {
@@ -183,7 +283,7 @@ func AddWord(w http.ResponseWriter, r *http.Request) {
 }
 func main() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/add", AddWord)
+	mux.HandleFunc("/add", AddToStory)
 	fmt.Println("Serving on :9000")
 	log.Fatal(http.ListenAndServe(":9000", mux))
 }
