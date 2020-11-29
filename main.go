@@ -6,16 +6,18 @@ import (
 	"net/http"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/mux"
 
 	"CollaborativeStory/colab/story"
 )
 
 func main() {
 	// HTTP multiplexer/router
-	mux := http.NewServeMux()
+	router := mux.NewRouter().StrictSlash(false)
 
-	mux.HandleFunc("/add", story.AddToStory)     // POST method to add word to story
-	mux.HandleFunc("/stories", story.GetStories) // GET method to list/get all stories
+	router.HandleFunc("/add", story.AddToStory)               // POST method to add word to story
+	router.HandleFunc("/stories", story.GetStories)           // GET method to list/get all stories
+	router.HandleFunc("/stories/{id:[0-9]+}", story.GetStory) // GET to get specific story
 	fmt.Println("Serving on :9000")
-	log.Fatal(http.ListenAndServe(":9000", mux))
+	log.Fatal(http.ListenAndServe(":9000", router))
 }
