@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -53,14 +54,18 @@ func GetStory(w http.ResponseWriter, r *http.Request) {
 	}
 	defer storyStmt.Close()
 
+	var createTs, updateTs time.Time
 	if storyStmt.Next() {
-		err = storyStmt.Scan(&resStory.ID, &resStory.Title, &resStory.StartParagraph, &resStory.EndParagraph, &resStory.CreatedAt, &resStory.UpdatedAt)
+		err = storyStmt.Scan(&resStory.ID, &resStory.Title, &resStory.StartParagraph, &resStory.EndParagraph, &createTs, &updateTs)
 		if err != nil {
 			log.Println(err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 			return
 		}
+		// Converting timestamp to TZ format
+		resStory.CreatedAt = createTs.Format(time.RFC3339Nano)
+		resStory.UpdatedAt = updateTs.Format(time.RFC3339Nano)
 	}
 
 	// Get paragraph details from paragraph table

@@ -15,7 +15,8 @@ func DBConn() (db *sql.DB) {
 	// DB Connection parameters (MySQL)
 	dbSource := os.Getenv("VERLOOP_DSN")
 
-	db, err := sql.Open(dbDriver, dbSource)
+	// Adding parseTime to process/parse timestamp into time.Time
+	db, err := sql.Open(dbDriver, dbSource+"?parseTime=true")
 	if err != nil {
 		panic(err.Error())
 	}

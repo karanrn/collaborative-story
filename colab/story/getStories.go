@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"CollaborativeStory/database"
 	"CollaborativeStory/helper"
@@ -93,14 +94,17 @@ func GetStories(w http.ResponseWriter, r *http.Request) {
 
 	for storiesStmt.Next() {
 		var iStory story
-		err = storiesStmt.Scan(&iStory.ID, &iStory.Title, &iStory.CreatedAt, &iStory.UpdatedAt)
+		var createTs, updateTs time.Time
+		err = storiesStmt.Scan(&iStory.ID, &iStory.Title, &createTs, &updateTs)
 		if err != nil {
 			log.Println(err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 			return
 		}
-
+		// Converting timestamps to TZ format (RFC3339Nano)
+		iStory.CreatedAt = createTs.Format(time.RFC3339Nano)
+		iStory.UpdatedAt = updateTs.Format(time.RFC3339Nano)
 		results = append(results, iStory)
 	}
 
