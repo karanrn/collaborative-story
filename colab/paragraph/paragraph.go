@@ -48,14 +48,14 @@ func AddToParagraph(sentenceID int) (paragraphID int, err error) {
 	}
 
 	// Check the size of the paragraph and update/create paragraph
-	updateParagraph, err := db.Prepare("update paragraph set end_sentence = ? where paragraph_id = ?")
+	updateParagraph, err := db.Prepare("update paragraph set end_sentence = ?, updated_at = current_timestamp() where paragraph_id = ?")
 	if err != nil {
 		log.Println(err.Error())
 		return paragraphID, err
 	}
 	defer updateParagraph.Close()
 
-	addParagraph, err := db.Prepare("insert into paragraph (paragraph_id, start_sentence) values (?, ?)")
+	addParagraph, err := db.Prepare("insert into paragraph (paragraph_id, start_sentence, created_at) values (?, ?, current_timestamp())")
 	if err != nil {
 		log.Println(err.Error())
 		return paragraphID, err

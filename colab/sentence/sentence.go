@@ -45,7 +45,7 @@ func AddToSentence(word string) (sentenceID int, err error) {
 		// Create next sentence
 		sentenceID++
 	}
-	addSentence, err := db.Prepare("insert into sentence values (?, ?)")
+	addSentence, err := db.Prepare("insert into sentence values (?, ?, current_timestamp())")
 	if err != nil {
 		log.Println(err.Error())
 		return sentenceID, err

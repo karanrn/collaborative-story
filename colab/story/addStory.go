@@ -51,14 +51,14 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Add new story
-		addStoryStmt, err := db.Prepare("insert into story (story_id, title) values (?, ?)")
+		addStoryStmt, err := db.Prepare("insert into story (story_id, title, created_at) values (?, ?, current_timestamp())")
 		if err != nil {
 			log.Println(err.Error())
 		}
 		defer addStoryStmt.Close()
 
 		// Update title
-		updateTitleStmt, err := db.Prepare("update story set title = concat(title, \" \", ?) where story_id = ?")
+		updateTitleStmt, err := db.Prepare("update story set title = concat(title, \" \", ?), updated_at = current_timestamp() where story_id = ?")
 		if err != nil {
 			log.Println(err.Error())
 		}
@@ -66,18 +66,25 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 
 		// Update story
 		// Update start of story (paragraph)
-		updateStartStoryStmt, err := db.Prepare("update story set start_paragraph = ? where story_id = ?")
+		updateStartStoryStmt, err := db.Prepare("update story set start_paragraph = ?, updated_at = current_timestamp() where story_id = ?")
 		if err != nil {
 			log.Println(err.Error())
 		}
 		defer updateStartStoryStmt.Close()
 
 		// Update end of story (paragraph)
-		updateEndStoryStmt, err := db.Prepare("update story set end_paragraph = ? where story_id = ?")
+		updateEndStoryStmt, err := db.Prepare("update story set end_paragraph = ?, updated_at = current_timestamp() where story_id = ?")
 		if err != nil {
 			log.Println(err.Error())
 		}
 		defer updateEndStoryStmt.Close()
+
+		// Update last updated timestamp for the word added to story
+		updateTimeStoryStmt, err := db.Prepare("update story set updated_at = current_timestamp()")
+		if err != nil {
+			log.Println(err.Error())
+		}
+		defer updateTimeStoryStmt.Close()
 
 		// Get the max value
 		if storyID == 0 {
@@ -155,6 +162,9 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 					_, err = updateStartStoryStmt.Exec(paragraphID, storyID)
 					if err != nil {
 						log.Println(err.Error())
+						w.WriteHeader(http.StatusInternalServerError)
+						json.NewEncoder(w).Encode(`{'error': 'Internal server error'}`)
+						return
 					}
 				}
 
@@ -163,9 +173,20 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 					_, err = updateEndStoryStmt.Exec(paragraphID, storyID)
 					if err != nil {
 						log.Println(err.Error())
+						w.WriteHeader(http.StatusInternalServerError)
+						json.NewEncoder(w).Encode(`{'error': 'Internal server error'}`)
+						return
 					}
 				}
 
+				// Update the story timestamp (updated_at)
+				_, err = updateTimeStoryStmt.Exec()
+				if err != nil {
+					log.Println(err.Error())
+					w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(`{'error': 'Internal server error'}`)
+					return
+				}
 				storyResp.ID = storyID
 				storyResp.Title = title
 				storyResp.CurrentSentence = reqWord["word"]
