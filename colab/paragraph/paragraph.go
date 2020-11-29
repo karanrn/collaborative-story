@@ -64,7 +64,7 @@ func AddToParagraph(sentenceID int) (paragraphID int, err error) {
 	defer addParagraph.Close()
 
 	if startParagraph != 0 && (sentenceID-startParagraph) == 10 {
-		_, err = updateParagraph.Exec(sentenceID, time.Now(), paragraphID)
+		_, err = updateParagraph.Exec(sentenceID, time.Now().In(time.UTC), paragraphID)
 		if err != nil {
 			log.Println(err.Error())
 			return paragraphID, err
@@ -72,7 +72,7 @@ func AddToParagraph(sentenceID int) (paragraphID int, err error) {
 	}
 
 	if startParagraph == 0 {
-		_, err = addParagraph.Exec(paragraphID, sentenceID, time.Now())
+		_, err = addParagraph.Exec(paragraphID, sentenceID, time.Now().In(time.UTC))
 		if err != nil {
 			log.Println(err.Error())
 			return paragraphID, err

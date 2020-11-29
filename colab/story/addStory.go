@@ -87,7 +87,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 		defer updateEndStoryStmt.Close()
 
 		// Update last updated timestamp for the word added to story
-		updateTimeStoryStmt, err := db.Prepare("update story set updated_at = ?")
+		updateTimeStoryStmt, err := db.Prepare("update story set updated_at = ? where story_id = ?")
 		if err != nil {
 			log.Println(err.Error())
 		}
@@ -128,7 +128,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 		var storyResp response
 		if title == "" {
 			// Add title word to the new story
-			_, err = addStoryStmt.Exec(storyID+1, word, time.Now().Format(time.RFC3339Nano))
+			_, err = addStoryStmt.Exec(storyID+1, word, time.Now().In(time.UTC))
 			if err != nil {
 				log.Println(err.Error())
 			}
@@ -139,7 +139,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 		} else {
 			if title != "" && len(strings.Split(title, " ")) < 2 {
 				// Update title of the story
-				_, err = updateTitleStmt.Exec(word, time.Now().Format(time.RFC3339Nano), storyID)
+				_, err = updateTitleStmt.Exec(word, time.Now().In(time.UTC), storyID)
 				if err != nil {
 					log.Println(err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
@@ -169,7 +169,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 
 				if startParagraph == 0 {
 					// Start a new story
-					_, err = updateStartStoryStmt.Exec(paragraphID, time.Now().Format(time.RFC3339Nano), storyID)
+					_, err = updateStartStoryStmt.Exec(paragraphID, time.Now().In(time.UTC), storyID)
 					if err != nil {
 						log.Println(err.Error())
 						w.WriteHeader(http.StatusInternalServerError)
@@ -180,7 +180,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 
 				if startParagraph != 0 && (paragraphID-startParagraph) == 7 {
 					// End the story
-					_, err = updateEndStoryStmt.Exec(paragraphID, time.Now().Format(time.RFC3339Nano), storyID)
+					_, err = updateEndStoryStmt.Exec(paragraphID, time.Now().In(time.UTC), storyID)
 					if err != nil {
 						log.Println(err.Error())
 						w.WriteHeader(http.StatusInternalServerError)
@@ -190,7 +190,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 				}
 
 				// Update the story timestamp (updated_at)
-				_, err = updateTimeStoryStmt.Exec(time.Now().Format(time.RFC3339Nano))
+				_, err = updateTimeStoryStmt.Exec(time.Now().In(time.UTC), storyID)
 				if err != nil {
 					log.Println(err.Error())
 					w.WriteHeader(http.StatusInternalServerError)

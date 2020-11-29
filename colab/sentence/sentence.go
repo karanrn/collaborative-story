@@ -53,7 +53,7 @@ func AddToSentence(word string) (sentenceID int, err error) {
 	}
 	defer addSentence.Close()
 
-	_, err = addSentence.Exec(sentenceID, word, time.Now())
+	_, err = addSentence.Exec(sentenceID, word, time.Now().In(time.UTC))
 	if err != nil {
 		log.Println(err.Error())
 		return sentenceID, err
