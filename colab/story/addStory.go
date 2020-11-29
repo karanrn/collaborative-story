@@ -30,10 +30,16 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		err := json.NewDecoder(r.Body).Decode(&reqWord)
 		if err != nil {
-			json.NewEncoder(w).Encode(`{'error': 'Error in decoding JSON'}`)
+			json.NewEncoder(w).Encode(`{'error': 'error in decoding JSON'}`)
 			return
 		}
 
+		// Check if multiple words are sent
+		if reqWord["word"] == "" || len(strings.Split(strings.TrimSpace(reqWord["word"]), " ")) > 1 {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(`{'error': 'multiple words sent'}`)
+			return
+		}
 		// Get unfinished story
 		var storyID int
 		var title string
@@ -135,6 +141,9 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 				_, err = updateTitleStmt.Exec(reqWord["word"], storyID)
 				if err != nil {
 					log.Println(err.Error())
+					w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
+					return
 				}
 
 				storyResp.ID = storyID
@@ -145,7 +154,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 				sentenceID, err := sentence.AddToSentence(reqWord["word"])
 				if err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
-					json.NewEncoder(w).Encode(`{'error': 'Internal server error'}`)
+					json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 					return
 				}
 
@@ -153,7 +162,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 				paragraphID, err := paragraph.AddToParagraph(sentenceID)
 				if err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
-					json.NewEncoder(w).Encode(`{'error': 'Internal server error'}`)
+					json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 					return
 				}
 
@@ -163,7 +172,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 					if err != nil {
 						log.Println(err.Error())
 						w.WriteHeader(http.StatusInternalServerError)
-						json.NewEncoder(w).Encode(`{'error': 'Internal server error'}`)
+						json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 						return
 					}
 				}
@@ -174,7 +183,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 					if err != nil {
 						log.Println(err.Error())
 						w.WriteHeader(http.StatusInternalServerError)
-						json.NewEncoder(w).Encode(`{'error': 'Internal server error'}`)
+						json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 						return
 					}
 				}
@@ -184,7 +193,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					log.Println(err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
-					json.NewEncoder(w).Encode(`{'error': 'Internal server error'}`)
+					json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 					return
 				}
 				storyResp.ID = storyID
@@ -198,13 +207,13 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 		resp, err := json.Marshal(storyResp)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, "Internal server error")
+			fmt.Fprintf(w, "internal server error")
 		}
 		json.NewEncoder(w).Encode(string(resp))
 
 	} else {
 		// Reject all requests other than POST
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		fmt.Fprintf(w, "Method not supported")
+		fmt.Fprintf(w, "method not supported")
 	}
 }
