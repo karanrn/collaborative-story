@@ -68,6 +68,12 @@ func GetStory(w http.ResponseWriter, r *http.Request) {
 		resStory.UpdatedAt = updateTs.Format(time.RFC3339Nano)
 	}
 
+	if resStory.ID == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(`{'error': 'story does not exist'}`)
+		return
+	}
+
 	// Get paragraph details from paragraph table
 	if resStory.StartParagraph > 0 {
 		var paraQuery string
