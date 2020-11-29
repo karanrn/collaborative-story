@@ -2,6 +2,7 @@ package sentence
 
 import (
 	"log"
+	"time"
 
 	"CollaborativeStory/database"
 )
@@ -45,14 +46,14 @@ func AddToSentence(word string) (sentenceID int, err error) {
 		// Create next sentence
 		sentenceID++
 	}
-	addSentence, err := db.Prepare("insert into sentence values (?, ?, current_timestamp())")
+	addSentence, err := db.Prepare("insert into sentence values (?, ?, ?)")
 	if err != nil {
 		log.Println(err.Error())
 		return sentenceID, err
 	}
 	defer addSentence.Close()
 
-	_, err = addSentence.Exec(sentenceID, word)
+	_, err = addSentence.Exec(sentenceID, word, time.Now())
 	if err != nil {
 		log.Println(err.Error())
 		return sentenceID, err

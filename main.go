@@ -13,8 +13,9 @@ import (
 func main() {
 	// HTTP multiplexer/router
 	mux := http.NewServeMux()
-	// POST method to add word to story
-	mux.HandleFunc("/add", story.AddToStory)
+
+	mux.HandleFunc("/add", story.AddToStory)     // POST method to add word to story
+	mux.HandleFunc("/stories", story.GetStories) // GET method to list/get all stories
 	fmt.Println("Serving on :9000")
 	log.Fatal(http.ListenAndServe(":9000", mux))
 }

@@ -2,10 +2,10 @@ package story
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"CollaborativeStory/colab/paragraph"
 	"CollaborativeStory/colab/sentence"
@@ -34,8 +34,9 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		word := strings.TrimSpace(reqWord["word"])
 		// Check if multiple words are sent
-		if reqWord["word"] == "" || len(strings.Split(strings.TrimSpace(reqWord["word"]), " ")) > 1 {
+		if word == "" || len(strings.Split(word, " ")) > 1 {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(`{'error': 'multiple words sent'}`)
 			return
@@ -57,14 +58,14 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Add new story
-		addStoryStmt, err := db.Prepare("insert into story (story_id, title, created_at) values (?, ?, current_timestamp())")
+		addStoryStmt, err := db.Prepare("insert into story (story_id, title, created_at) values (?, ?, ?)")
 		if err != nil {
 			log.Println(err.Error())
 		}
 		defer addStoryStmt.Close()
 
 		// Update title
-		updateTitleStmt, err := db.Prepare("update story set title = concat(title, \" \", ?), updated_at = current_timestamp() where story_id = ?")
+		updateTitleStmt, err := db.Prepare("update story set title = concat(title, \" \", ?), updated_at = ? where story_id = ?")
 		if err != nil {
 			log.Println(err.Error())
 		}
@@ -72,21 +73,21 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 
 		// Update story
 		// Update start of story (paragraph)
-		updateStartStoryStmt, err := db.Prepare("update story set start_paragraph = ?, updated_at = current_timestamp() where story_id = ?")
+		updateStartStoryStmt, err := db.Prepare("update story set start_paragraph = ?, updated_at = ? where story_id = ?")
 		if err != nil {
 			log.Println(err.Error())
 		}
 		defer updateStartStoryStmt.Close()
 
 		// Update end of story (paragraph)
-		updateEndStoryStmt, err := db.Prepare("update story set end_paragraph = ?, updated_at = current_timestamp() where story_id = ?")
+		updateEndStoryStmt, err := db.Prepare("update story set end_paragraph = ?, updated_at = ? where story_id = ?")
 		if err != nil {
 			log.Println(err.Error())
 		}
 		defer updateEndStoryStmt.Close()
 
 		// Update last updated timestamp for the word added to story
-		updateTimeStoryStmt, err := db.Prepare("update story set updated_at = current_timestamp()")
+		updateTimeStoryStmt, err := db.Prepare("update story set updated_at = ?")
 		if err != nil {
 			log.Println(err.Error())
 		}
@@ -127,18 +128,18 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 		var storyResp response
 		if title == "" {
 			// Add title word to the new story
-			_, err = addStoryStmt.Exec(storyID+1, reqWord["word"])
+			_, err = addStoryStmt.Exec(storyID+1, word, time.Now().Format(time.RFC3339Nano))
 			if err != nil {
 				log.Println(err.Error())
 			}
 
 			storyResp.ID = storyID + 1
-			storyResp.Title = reqWord["word"]
+			storyResp.Title = word
 			storyResp.CurrentSentence = ""
 		} else {
 			if title != "" && len(strings.Split(title, " ")) < 2 {
 				// Update title of the story
-				_, err = updateTitleStmt.Exec(reqWord["word"], storyID)
+				_, err = updateTitleStmt.Exec(word, time.Now().Format(time.RFC3339Nano), storyID)
 				if err != nil {
 					log.Println(err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
@@ -147,11 +148,11 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 				}
 
 				storyResp.ID = storyID
-				storyResp.Title = title + " " + reqWord["word"]
+				storyResp.Title = title + " " + word
 				storyResp.CurrentSentence = ""
 			} else {
 				// Add word to sentence of the story
-				sentenceID, err := sentence.AddToSentence(reqWord["word"])
+				sentenceID, err := sentence.AddToSentence(word)
 				if err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
 					json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
@@ -168,7 +169,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 
 				if startParagraph == 0 {
 					// Start a new story
-					_, err = updateStartStoryStmt.Exec(paragraphID, storyID)
+					_, err = updateStartStoryStmt.Exec(paragraphID, time.Now().Format(time.RFC3339Nano), storyID)
 					if err != nil {
 						log.Println(err.Error())
 						w.WriteHeader(http.StatusInternalServerError)
@@ -179,7 +180,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 
 				if startParagraph != 0 && (paragraphID-startParagraph) == 7 {
 					// End the story
-					_, err = updateEndStoryStmt.Exec(paragraphID, storyID)
+					_, err = updateEndStoryStmt.Exec(paragraphID, time.Now().Format(time.RFC3339Nano), storyID)
 					if err != nil {
 						log.Println(err.Error())
 						w.WriteHeader(http.StatusInternalServerError)
@@ -189,7 +190,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 				}
 
 				// Update the story timestamp (updated_at)
-				_, err = updateTimeStoryStmt.Exec()
+				_, err = updateTimeStoryStmt.Exec(time.Now().Format(time.RFC3339Nano))
 				if err != nil {
 					log.Println(err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
@@ -198,7 +199,7 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 				}
 				storyResp.ID = storyID
 				storyResp.Title = title
-				storyResp.CurrentSentence = reqWord["word"]
+				storyResp.CurrentSentence = word
 			}
 		}
 
@@ -207,13 +208,14 @@ func AddToStory(w http.ResponseWriter, r *http.Request) {
 		resp, err := json.Marshal(storyResp)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, "internal server error")
+			json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
+			return
 		}
 		json.NewEncoder(w).Encode(string(resp))
 
 	} else {
 		// Reject all requests other than POST
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		fmt.Fprintf(w, "method not supported")
+		json.NewEncoder(w).Encode(`{'error': 'method not supported'}`)
 	}
 }

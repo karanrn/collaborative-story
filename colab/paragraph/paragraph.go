@@ -2,6 +2,7 @@ package paragraph
 
 import (
 	"log"
+	"time"
 
 	"CollaborativeStory/database"
 )
@@ -48,14 +49,14 @@ func AddToParagraph(sentenceID int) (paragraphID int, err error) {
 	}
 
 	// Check the size of the paragraph and update/create paragraph
-	updateParagraph, err := db.Prepare("update paragraph set end_sentence = ?, updated_at = current_timestamp() where paragraph_id = ?")
+	updateParagraph, err := db.Prepare("update paragraph set end_sentence = ?, updated_at = ? where paragraph_id = ?")
 	if err != nil {
 		log.Println(err.Error())
 		return paragraphID, err
 	}
 	defer updateParagraph.Close()
 
-	addParagraph, err := db.Prepare("insert into paragraph (paragraph_id, start_sentence, created_at) values (?, ?, current_timestamp())")
+	addParagraph, err := db.Prepare("insert into paragraph (paragraph_id, start_sentence, created_at) values (?, ?, ?)")
 	if err != nil {
 		log.Println(err.Error())
 		return paragraphID, err
@@ -63,7 +64,7 @@ func AddToParagraph(sentenceID int) (paragraphID int, err error) {
 	defer addParagraph.Close()
 
 	if startParagraph != 0 && (sentenceID-startParagraph) == 10 {
-		_, err = updateParagraph.Exec(sentenceID, paragraphID)
+		_, err = updateParagraph.Exec(sentenceID, time.Now(), paragraphID)
 		if err != nil {
 			log.Println(err.Error())
 			return paragraphID, err
@@ -71,7 +72,7 @@ func AddToParagraph(sentenceID int) (paragraphID int, err error) {
 	}
 
 	if startParagraph == 0 {
-		_, err = addParagraph.Exec(paragraphID, sentenceID)
+		_, err = addParagraph.Exec(paragraphID, sentenceID, time.Now())
 		if err != nil {
 			log.Println(err.Error())
 			return paragraphID, err
