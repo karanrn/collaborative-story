@@ -15,7 +15,9 @@ And, if you want just run the code on your local machine -
     ```
     export VERLOOP_DSN="mysql://[user]:[password]@tcp([db_host]:3306)/[db_name]"
     ```
-2. Now you can hit the API at `http://localhost:9000/`
+2. Run `go build -v -mod mod -ldflags "-s -w" -o restapi . `
+3. Execute/Run `./restapi`
+4. Now you can hit the API at `http://localhost:9000/`
 
 **NOTE:**<br>
 Application uses MySql as it's database, please pass the database connection string similar to below - <br>
