@@ -4,4 +4,4 @@ services:
     ports:
       - "9000:9000"
     environment:
-      VERLOOP_DSN: ${VERLOOP_DSN}
+      DATABASE_DSN: ${DATABASE_DSN}

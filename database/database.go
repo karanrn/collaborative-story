@@ -14,7 +14,7 @@ const (
 // DBConn creates DB Connection object
 func DBConn() (db *sql.DB) {
 	// DB Connection parameters (MySQL)
-	dbSource := strings.TrimPrefix((os.Getenv("VERLOOP_DSN")), "mysql://")
+	dbSource := strings.TrimPrefix((os.Getenv("DATABASE_DSN")), "mysql://")
 
 	// Adding parseTime to process/parse timestamp into time.Time
 	db, err := sql.Open(dbDriver, dbSource+"?parseTime=true")
