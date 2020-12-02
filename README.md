@@ -11,9 +11,9 @@ If you are familiar (and fan) of docker (and docker-compose) -
 3. Now you can hit the API at `http://localhost:9000/`
 
 And, if you want just run the code on your local machine - 
-1. Export environment variable `VERLOOP_DSN`
+1. Export environment variable `DATABASE_DSN`
     ```
-    export VERLOOP_DSN="mysql://[user]:[password]@tcp([db_host]:3306)/[db_name]"
+    export DATABASE_DSN="mysql://[user]:[password]@tcp([db_host]:3306)/[db_name]"
     ```
 2. Run `go build -v -mod mod -ldflags "-s -w" -o restapi . `
 3. Execute/Run `./restapi`
