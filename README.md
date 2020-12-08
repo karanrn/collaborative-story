@@ -24,11 +24,13 @@ Application uses MySql as it's database, please pass the database connection str
 `mysql://user:password@tcp(localhost:3306)/test`
 
 ---
-## With more time...
+## Things to be done...
 I would 
 1. Optimize structure and relations between the tables for least number of interactions from application (too many interactions with tables).
-2. Smaller code and much more modularized (it is bit chunky now).
-3. Better transaction handling in the application code.
-4. Middlewares for authentication, rate limiting and request validation.
-5. More and informal logging for the application.
-6. Detailed profiling of the application.
+2. Middlewares for authentication, rate limiting and request validation.
+3. More and informal logging for the application.
+4. Detailed profiling of the application.
+
+---
+## Further reading - 
+1. https://www.alexedwards.net/blog/organising-database-access
