@@ -1,7 +1,6 @@
 package database
 
 import (
-	"log"
 	"time"
 )
 
@@ -12,14 +11,12 @@ func AddToParagraph(sentenceID int) (paragraphID int, err error) {
 	var startParagraph int
 	paragraphStmt, err := db.Query("select IFNULL(paragraph_id, 0), IFNULL(start_sentence, 0) from paragraph where start_sentence is not NULL and end_sentence is NULL;")
 	if err != nil {
-		log.Println(err.Error())
 		return paragraphID, err
 	}
 	defer paragraphStmt.Close()
 	if paragraphStmt.Next() {
 		err = paragraphStmt.Scan(&paragraphID, &startParagraph)
 		if err != nil {
-			log.Println(err.Error())
 			return paragraphID, err
 		}
 	}
@@ -28,14 +25,12 @@ func AddToParagraph(sentenceID int) (paragraphID int, err error) {
 	if paragraphID == 0 {
 		lastParagraphStmt, err := db.Query("select IFNULL(max(paragraph_id), 0) from paragraph;")
 		if err != nil {
-			log.Println(err.Error())
 			return paragraphID, err
 		}
 		defer lastParagraphStmt.Close()
 		if lastParagraphStmt.Next() {
 			err = lastParagraphStmt.Scan(&paragraphID)
 			if err != nil {
-				log.Println(err.Error())
 				return paragraphID, err
 			}
 		}
@@ -46,14 +41,12 @@ func AddToParagraph(sentenceID int) (paragraphID int, err error) {
 	// Check the size of the paragraph and update/create paragraph
 	updateParagraph, err := db.Prepare("update paragraph set end_sentence = ?, updated_at = ? where paragraph_id = ?")
 	if err != nil {
-		log.Println(err.Error())
 		return paragraphID, err
 	}
 	defer updateParagraph.Close()
 
 	addParagraph, err := db.Prepare("insert into paragraph (paragraph_id, start_sentence, created_at) values (?, ?, ?)")
 	if err != nil {
-		log.Println(err.Error())
 		return paragraphID, err
 	}
 	defer addParagraph.Close()
@@ -61,7 +54,6 @@ func AddToParagraph(sentenceID int) (paragraphID int, err error) {
 	if startParagraph != 0 && (sentenceID-startParagraph) == 10 {
 		_, err = updateParagraph.Exec(sentenceID, time.Now().In(time.UTC), paragraphID)
 		if err != nil {
-			log.Println(err.Error())
 			return paragraphID, err
 		}
 	}
@@ -69,7 +61,6 @@ func AddToParagraph(sentenceID int) (paragraphID int, err error) {
 	if startParagraph == 0 {
 		_, err = addParagraph.Exec(paragraphID, sentenceID, time.Now().In(time.UTC))
 		if err != nil {
-			log.Println(err.Error())
 			return paragraphID, err
 		}
 	}

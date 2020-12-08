@@ -16,6 +16,8 @@ func PostStory(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&reqWord)
 	if err != nil {
+		log.Printf("error: %v", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(`{'error': 'error in decoding JSON'}`)
 		return
 	}
@@ -31,7 +33,10 @@ func PostStory(w http.ResponseWriter, r *http.Request) {
 	// Get unfinished story
 	story, err := database.GetLatestStory()
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("error: %v", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
+		return
 	}
 
 	var storyResp models.PostResponse
@@ -39,6 +44,7 @@ func PostStory(w http.ResponseWriter, r *http.Request) {
 		// Add title word to the new story
 		err = database.AddStory(story.ID+1, word, true)
 		if err != nil {
+			log.Printf("error: %v", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 			return
@@ -52,6 +58,7 @@ func PostStory(w http.ResponseWriter, r *http.Request) {
 			// Update title of the story
 			err = database.AddStory(story.ID, word, false)
 			if err != nil {
+				log.Printf("error: %v", err.Error())
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 				return
@@ -64,6 +71,7 @@ func PostStory(w http.ResponseWriter, r *http.Request) {
 			// Add word to sentence of the story
 			sentenceID, err := database.AddToSentence(word)
 			if err != nil {
+				log.Printf("error: %v", err.Error())
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 				return
@@ -72,6 +80,7 @@ func PostStory(w http.ResponseWriter, r *http.Request) {
 			// Add/Update paragraph of the story
 			paragraphID, err := database.AddToParagraph(sentenceID)
 			if err != nil {
+				log.Printf("error: %v", err.Error())
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 				return
@@ -81,7 +90,7 @@ func PostStory(w http.ResponseWriter, r *http.Request) {
 				// Start a new story
 				err = database.UpdateStoryParagraph(story.ID, paragraphID, false)
 				if err != nil {
-					log.Println(err.Error())
+					log.Printf("error: %v", err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
 					json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 					return
@@ -92,7 +101,7 @@ func PostStory(w http.ResponseWriter, r *http.Request) {
 				// End the story
 				err = database.UpdateStoryParagraph(story.ID, paragraphID, true)
 				if err != nil {
-					log.Println(err.Error())
+					log.Printf("error: %v", err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
 					json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 					return
@@ -102,7 +111,7 @@ func PostStory(w http.ResponseWriter, r *http.Request) {
 			// Update the story timestamp (updated_at)
 			err = database.UpdateStoryTimestamp(story.ID)
 			if err != nil {
-				log.Println(err.Error())
+				log.Printf("error: %v", err.Error())
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 				return
@@ -117,6 +126,7 @@ func PostStory(w http.ResponseWriter, r *http.Request) {
 	// Marshal the response
 	resp, err := json.Marshal(storyResp)
 	if err != nil {
+		log.Printf("error: %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 		return

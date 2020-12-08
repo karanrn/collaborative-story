@@ -2,7 +2,6 @@ package database
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"CollaborativeStory/colab/models"
@@ -15,7 +14,6 @@ func FetchStory(storyID string) (models.DetailedStory, error) {
 	// Get story details from story table
 	storyStmt, err := db.Query(fmt.Sprintf("Select story_id, title, ifnull(start_paragraph, 0), ifnull(end_paragraph, 0), created_at, updated_at from story where story_id = %s", storyID))
 	if err != nil {
-		log.Println(err.Error())
 		return models.DetailedStory{}, err
 	}
 	defer storyStmt.Close()
@@ -24,7 +22,6 @@ func FetchStory(storyID string) (models.DetailedStory, error) {
 	if storyStmt.Next() {
 		err = storyStmt.Scan(&story.ID, &story.Title, &story.StartParagraph, &story.EndParagraph, &createTs, &updateTs)
 		if err != nil {
-			log.Println(err.Error())
 			return models.DetailedStory{}, err
 		}
 		// Converting timestamp to TZ format

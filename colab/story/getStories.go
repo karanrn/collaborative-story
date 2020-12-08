@@ -28,7 +28,7 @@ func GetStories(w http.ResponseWriter, r *http.Request) {
 	if query.Get("limit") != "" {
 		limit, err = strconv.ParseInt(query.Get("limit"), 10, 64)
 		if err != nil {
-			log.Println(err.Error())
+			log.Printf("error: %v", err.Error())
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(`{'error': 'limit is not an integer'}`)
 			return
@@ -41,7 +41,7 @@ func GetStories(w http.ResponseWriter, r *http.Request) {
 	if query.Get("offset") != "" {
 		offset, err = strconv.ParseInt(query.Get("offset"), 10, 64)
 		if err != nil {
-			log.Println(err.Error())
+			log.Printf("error: %v", err.Error())
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(`{'error': 'offset is not an integer'}`)
 			return
@@ -65,6 +65,7 @@ func GetStories(w http.ResponseWriter, r *http.Request) {
 		if helper.Contains(query.Get("order"), allowedOrdering) {
 			sort = query.Get("sort")
 		} else {
+			log.Printf("error: %v", err.Error())
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(fmt.Sprintf("{'error': 'order should be among these values %v'}", allowedOrdering))
 			return
@@ -76,13 +77,14 @@ func GetStories(w http.ResponseWriter, r *http.Request) {
 
 	results, err := database.FetchStories(sort, order, offset, limit)
 	if err != nil {
+		log.Printf("error: %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 		return
 	}
 	resp, err := json.Marshal(results)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("error: %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 		return

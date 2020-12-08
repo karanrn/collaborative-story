@@ -2,6 +2,7 @@ package story
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -19,6 +20,7 @@ func GetStory(w http.ResponseWriter, r *http.Request) {
 	// Get story details from story table
 	resStory, err := database.FetchStory(storyID)
 	if err != nil {
+		log.Printf("error: %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 		return
@@ -41,6 +43,7 @@ func GetStory(w http.ResponseWriter, r *http.Request) {
 
 		allParagraphs, err := database.FetchParagraphs(resStory.StartParagraph, resStory.EndParagraph, isParagraphComplete)
 		if err != nil {
+			log.Printf("error: %v", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 			return
@@ -55,6 +58,7 @@ func GetStory(w http.ResponseWriter, r *http.Request) {
 
 			pg.Sentences, err = database.FetchSentences(pg.StartSentence, pg.EndSentence, isSentenceComplete)
 			if err != nil {
+				log.Printf("error: %v", err.Error())
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 				return
@@ -66,6 +70,7 @@ func GetStory(w http.ResponseWriter, r *http.Request) {
 
 	result, err := json.Marshal(&resStory)
 	if err != nil {
+		log.Printf("error: %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
 		return

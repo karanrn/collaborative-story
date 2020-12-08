@@ -1,9 +1,9 @@
 package database
 
 import (
-	"CollaborativeStory/colab/models"
 	"fmt"
-	"log"
+
+	"CollaborativeStory/colab/models"
 )
 
 // FetchParagraphs returns/fetches paragraphs of the story
@@ -18,7 +18,6 @@ func FetchParagraphs(start int, end int, isComplete bool) ([]models.Paragraph, e
 
 	paragraphStmt, err := db.Query(paraQuery)
 	if err != nil {
-		log.Println(err.Error())
 		return nil, err
 	}
 	defer paragraphStmt.Close()
@@ -28,7 +27,6 @@ func FetchParagraphs(start int, end int, isComplete bool) ([]models.Paragraph, e
 	for paragraphStmt.Next() {
 		err = paragraphStmt.Scan(&tmpParagraph.ID, &tmpParagraph.StartSentence, &tmpParagraph.EndSentence)
 		if err != nil {
-			log.Println(err.Error())
 			return nil, err
 		}
 		allParagraphs = append(allParagraphs, tmpParagraph)

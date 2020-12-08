@@ -2,7 +2,6 @@ package database
 
 import (
 	"fmt"
-	"log"
 )
 
 // FetchSentences gets all the sentences of the paragraph
@@ -18,7 +17,6 @@ func FetchSentences(start int, end int, isComplete bool) ([]string, error) {
 	// Get sentences of the story
 	sentenceStmt, err := db.Query(sentenceQuery)
 	if err != nil {
-		log.Println(err.Error())
 		return nil, err
 	}
 	defer sentenceStmt.Close()
@@ -27,7 +25,6 @@ func FetchSentences(start int, end int, isComplete bool) ([]string, error) {
 	for sentenceStmt.Next() {
 		err = sentenceStmt.Scan(&word)
 		if err != nil {
-			log.Println(err.Error())
 			return nil, err
 		}
 
