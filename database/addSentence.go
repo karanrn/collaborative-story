@@ -1,17 +1,12 @@
-package sentence
+package database
 
 import (
 	"log"
 	"time"
-
-	"CollaborativeStory/database"
 )
 
 // AddToSentence adds words to form a sentence
 func AddToSentence(word string) (sentenceID int, err error) {
-	// DB Connection
-	db := database.DBConn()
-	defer db.Close()
 
 	// Get the unfinished sentence id
 	sentenceStmt, err := db.Query("select IFNULL(max(sentence_id), 0) from sentence group by sentence_id having count(word) < 15 order by sentence_id desc;")

@@ -1,17 +1,12 @@
-package paragraph
+package database
 
 import (
 	"log"
 	"time"
-
-	"CollaborativeStory/database"
 )
 
 // AddToParagraph adds sentence to a paragraph
 func AddToParagraph(sentenceID int) (paragraphID int, err error) {
-	// DB Connection
-	db := database.DBConn()
-	defer db.Close()
 
 	// Get the unfinished paragraph
 	var startParagraph int

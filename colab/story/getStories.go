@@ -6,18 +6,10 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 
 	"CollaborativeStory/database"
 	"CollaborativeStory/helper"
 )
-
-type story struct {
-	ID        int    `json:"ID"`
-	Title     string `json:"Title"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-}
 
 // Allowed values for sort and order
 var allowedSortBy = []string{"title", "created_at", "updated_at"}
@@ -25,9 +17,6 @@ var allowedOrdering = []string{"asc", "desc"}
 
 // GetStories lists all the stories from the database
 func GetStories(w http.ResponseWriter, r *http.Request) {
-	var results []story
-	db := database.DBConn()
-	defer db.Close()
 
 	var limit, offset int64
 	var sort, order string
@@ -85,29 +74,12 @@ func GetStories(w http.ResponseWriter, r *http.Request) {
 		order = allowedOrdering[0]
 	}
 
-	// Get all records
-	storiesStmt, err := db.Query(fmt.Sprintf("Select story_id, title, created_at, updated_at from story order by %s %s limit %d, %d ", sort, order, offset, limit))
+	results, err := database.FetchStories(sort, order, offset, limit)
 	if err != nil {
-		log.Println(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
+		return
 	}
-	defer storiesStmt.Close()
-
-	for storiesStmt.Next() {
-		var iStory story
-		var createTs, updateTs time.Time
-		err = storiesStmt.Scan(&iStory.ID, &iStory.Title, &createTs, &updateTs)
-		if err != nil {
-			log.Println(err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(`{'error': 'internal server error'}`)
-			return
-		}
-		// Converting timestamps to TZ format (RFC3339Nano)
-		iStory.CreatedAt = createTs.Format(time.RFC3339Nano)
-		iStory.UpdatedAt = updateTs.Format(time.RFC3339Nano)
-		results = append(results, iStory)
-	}
-
 	resp, err := json.Marshal(results)
 	if err != nil {
 		log.Println(err.Error())
