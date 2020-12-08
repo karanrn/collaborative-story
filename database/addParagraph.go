@@ -5,11 +5,11 @@ import (
 )
 
 // AddToParagraph adds sentence to a paragraph
-func AddToParagraph(sentenceID int) (paragraphID int, err error) {
+func (s *StoryDB) AddToParagraph(sentenceID int) (paragraphID int, err error) {
 
 	// Get the unfinished paragraph
 	var startParagraph int
-	paragraphStmt, err := db.Query("select IFNULL(paragraph_id, 0), IFNULL(start_sentence, 0) from paragraph where start_sentence is not NULL and end_sentence is NULL;")
+	paragraphStmt, err := s.db.Query("select IFNULL(paragraph_id, 0), IFNULL(start_sentence, 0) from paragraph where start_sentence is not NULL and end_sentence is NULL;")
 	if err != nil {
 		return paragraphID, err
 	}
@@ -23,7 +23,7 @@ func AddToParagraph(sentenceID int) (paragraphID int, err error) {
 
 	// Get the max value
 	if paragraphID == 0 {
-		lastParagraphStmt, err := db.Query("select IFNULL(max(paragraph_id), 0) from paragraph;")
+		lastParagraphStmt, err := s.db.Query("select IFNULL(max(paragraph_id), 0) from paragraph;")
 		if err != nil {
 			return paragraphID, err
 		}
@@ -39,13 +39,13 @@ func AddToParagraph(sentenceID int) (paragraphID int, err error) {
 	}
 
 	// Check the size of the paragraph and update/create paragraph
-	updateParagraph, err := db.Prepare("update paragraph set end_sentence = ?, updated_at = ? where paragraph_id = ?")
+	updateParagraph, err := s.db.Prepare("update paragraph set end_sentence = ?, updated_at = ? where paragraph_id = ?")
 	if err != nil {
 		return paragraphID, err
 	}
 	defer updateParagraph.Close()
 
-	addParagraph, err := db.Prepare("insert into paragraph (paragraph_id, start_sentence, created_at) values (?, ?, ?)")
+	addParagraph, err := s.db.Prepare("insert into paragraph (paragraph_id, start_sentence, created_at) values (?, ?, ?)")
 	if err != nil {
 		return paragraphID, err
 	}

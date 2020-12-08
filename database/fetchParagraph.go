@@ -7,7 +7,7 @@ import (
 )
 
 // FetchParagraphs returns/fetches paragraphs of the story
-func FetchParagraphs(start int, end int, isComplete bool) ([]models.Paragraph, error) {
+func (s *StoryDB) FetchParagraphs(start int, end int, isComplete bool) ([]models.Paragraph, error) {
 	var paraQuery string
 	// Consideration for unfinished story
 	if !isComplete {
@@ -16,7 +16,7 @@ func FetchParagraphs(start int, end int, isComplete bool) ([]models.Paragraph, e
 		paraQuery = fmt.Sprintf("Select paragraph_id, start_sentence, end_sentence from paragraph where paragraph_id >= %d and paragraph_id < %d", start, end)
 	}
 
-	paragraphStmt, err := db.Query(paraQuery)
+	paragraphStmt, err := s.db.Query(paraQuery)
 	if err != nil {
 		return nil, err
 	}

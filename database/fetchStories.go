@@ -8,11 +8,11 @@ import (
 )
 
 // FetchStories gets all the stories from the database
-func FetchStories(sort string, order string, offset int64, limit int64) ([]models.Story, error) {
+func (s *StoryDB) FetchStories(sort string, order string, offset int64, limit int64) ([]models.Story, error) {
 	var results []models.Story
 
 	// Get all records
-	storiesStmt, err := db.Query(fmt.Sprintf("Select story_id, title, created_at, updated_at from story order by %s %s limit %d, %d ", sort, order, offset, limit))
+	storiesStmt, err := s.db.Query(fmt.Sprintf("Select story_id, title, created_at, updated_at from story order by %s %s limit %d, %d ", sort, order, offset, limit))
 	if err != nil {
 		return nil, err
 	}

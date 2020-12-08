@@ -8,11 +8,11 @@ import (
 )
 
 // FetchStory retruns specific story requested
-func FetchStory(storyID string) (models.DetailedStory, error) {
+func (s *StoryDB) FetchStory(storyID string) (models.DetailedStory, error) {
 
 	var story models.DetailedStory
 	// Get story details from story table
-	storyStmt, err := db.Query(fmt.Sprintf("Select story_id, title, ifnull(start_paragraph, 0), ifnull(end_paragraph, 0), created_at, updated_at from story where story_id = %s", storyID))
+	storyStmt, err := s.db.Query(fmt.Sprintf("Select story_id, title, ifnull(start_paragraph, 0), ifnull(end_paragraph, 0), created_at, updated_at from story where story_id = %s", storyID))
 	if err != nil {
 		return models.DetailedStory{}, err
 	}

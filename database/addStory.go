@@ -7,16 +7,16 @@ import (
 )
 
 // AddStory creates a new story
-func AddStory(storyID int, word string, isNew bool) error {
+func (s *StoryDB) AddStory(storyID int, word string, isNew bool) error {
 	// Add new story
-	addStoryStmt, err := db.Prepare("insert into story (story_id, title, created_at) values (?, ?, ?)")
+	addStoryStmt, err := s.db.Prepare("insert into story (story_id, title, created_at) values (?, ?, ?)")
 	if err != nil {
 		return err
 	}
 	defer addStoryStmt.Close()
 
 	// Update title
-	updateTitleStmt, err := db.Prepare("update story set title = concat(title, \" \", ?), updated_at = ? where story_id = ?")
+	updateTitleStmt, err := s.db.Prepare("update story set title = concat(title, \" \", ?), updated_at = ? where story_id = ?")
 	if err != nil {
 		return err
 	}
@@ -38,10 +38,10 @@ func AddStory(storyID int, word string, isNew bool) error {
 }
 
 // GetLatestStory gets latest story, unfinished or creates new one
-func GetLatestStory() (models.Story, error) {
+func (s *StoryDB) GetLatestStory() (models.Story, error) {
 	var story models.Story
 	// Get unfinished story
-	storyStmt, err := db.Query("select IFNULL(story_id, 0), title, IFNULL(start_paragraph, 0) from story where start_paragraph is not NULL and end_paragraph is NULL;")
+	storyStmt, err := s.db.Query("select IFNULL(story_id, 0), title, IFNULL(start_paragraph, 0) from story where start_paragraph is not NULL and end_paragraph is NULL;")
 	if err != nil {
 		return models.Story{}, err
 	}
@@ -56,7 +56,7 @@ func GetLatestStory() (models.Story, error) {
 	// Get the max value
 	if story.ID == 0 {
 		// Get the latest story with only title in creation
-		lastStoryStmt, err := db.Query("select IFNULL(story_id, 0), title from story where start_paragraph is null order by story_id desc limit 1")
+		lastStoryStmt, err := s.db.Query("select IFNULL(story_id, 0), title from story where start_paragraph is null order by story_id desc limit 1")
 		if err != nil {
 			return models.Story{}, err
 		}
@@ -70,7 +70,7 @@ func GetLatestStory() (models.Story, error) {
 
 		// Get the max value if it is brand new
 		if story.ID == 0 {
-			maxStoryStmt, err := db.Query("select ifnull(max(story_id), 0) from story")
+			maxStoryStmt, err := s.db.Query("select ifnull(max(story_id), 0) from story")
 			if err != nil {
 				return models.Story{}, err
 			}
@@ -89,17 +89,17 @@ func GetLatestStory() (models.Story, error) {
 }
 
 // UpdateStoryParagraph updates or completes story with paragraphs
-func UpdateStoryParagraph(storyID int, paragraphID int, isEnd bool) error {
+func (s *StoryDB) UpdateStoryParagraph(storyID int, paragraphID int, isEnd bool) error {
 	// Update story
 	// Update start of story (paragraph)
-	updateStartStoryStmt, err := db.Prepare("update story set start_paragraph = ?, updated_at = ? where story_id = ?")
+	updateStartStoryStmt, err := s.db.Prepare("update story set start_paragraph = ?, updated_at = ? where story_id = ?")
 	if err != nil {
 		return err
 	}
 	defer updateStartStoryStmt.Close()
 
 	// Update end of story (paragraph)
-	updateEndStoryStmt, err := db.Prepare("update story set end_paragraph = ?, updated_at = ? where story_id = ?")
+	updateEndStoryStmt, err := s.db.Prepare("update story set end_paragraph = ?, updated_at = ? where story_id = ?")
 	if err != nil {
 		return err
 	}
@@ -121,9 +121,9 @@ func UpdateStoryParagraph(storyID int, paragraphID int, isEnd bool) error {
 }
 
 // UpdateStoryTimestamp updates updated_at timestamp whenever a new word is added
-func UpdateStoryTimestamp(storyID int) error {
+func (s StoryDB) UpdateStoryTimestamp(storyID int) error {
 	// Update last updated timestamp for the word added to story
-	updateTimeStoryStmt, err := db.Prepare("update story set updated_at = ? where story_id = ?")
+	updateTimeStoryStmt, err := s.db.Prepare("update story set updated_at = ? where story_id = ?")
 	if err != nil {
 		return err
 	}

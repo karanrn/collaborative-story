@@ -5,10 +5,10 @@ import (
 )
 
 // AddToSentence adds words to form a sentence
-func AddToSentence(word string) (sentenceID int, err error) {
+func (s *StoryDB) AddToSentence(word string) (sentenceID int, err error) {
 
 	// Get the unfinished sentence id
-	sentenceStmt, err := db.Query("select IFNULL(max(sentence_id), 0) from sentence group by sentence_id having count(word) < 15 order by sentence_id desc;")
+	sentenceStmt, err := s.db.Query("select IFNULL(max(sentence_id), 0) from sentence group by sentence_id having count(word) < 15 order by sentence_id desc;")
 	if err != nil {
 		return sentenceID, err
 	}
@@ -22,7 +22,7 @@ func AddToSentence(word string) (sentenceID int, err error) {
 
 	// Get the max value
 	if sentenceID == 0 {
-		lastSentenceStmt, err := db.Query("select IFNULL(max(sentence_id), 0) from sentence;")
+		lastSentenceStmt, err := s.db.Query("select IFNULL(max(sentence_id), 0) from sentence;")
 		if err != nil {
 			return sentenceID, err
 		}
@@ -36,7 +36,7 @@ func AddToSentence(word string) (sentenceID int, err error) {
 		// Create next sentence
 		sentenceID++
 	}
-	addSentence, err := db.Prepare("insert into sentence values (?, ?, ?)")
+	addSentence, err := s.db.Prepare("insert into sentence values (?, ?, ?)")
 	if err != nil {
 		return sentenceID, err
 	}
