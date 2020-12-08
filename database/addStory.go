@@ -7,7 +7,7 @@ import (
 )
 
 // AddStory creates a new story
-func (s *StoryDB) AddStory(storyID int, word string, isNew bool) error {
+func (s StoryDB) AddStory(storyID int, word string, isNew bool) error {
 	// Add new story
 	addStoryStmt, err := s.db.Prepare("insert into story (story_id, title, created_at) values (?, ?, ?)")
 	if err != nil {

@@ -12,7 +12,7 @@ import (
 )
 
 // GetStory gets the specific story basis story_id
-func GetStory(s *database.StoryDB) http.HandlerFunc {
+func GetStory(s database.StoryDB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		storyID := mux.Vars(r)["id"]
 

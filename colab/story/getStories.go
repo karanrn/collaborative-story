@@ -16,7 +16,7 @@ var allowedSortBy = []string{"title", "created_at", "updated_at"}
 var allowedOrdering = []string{"asc", "desc"}
 
 // GetStories lists all the stories from the database
-func GetStories(s *database.StoryDB) http.HandlerFunc {
+func GetStories(s database.StoryDB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var limit, offset int64
 		var sort, order string

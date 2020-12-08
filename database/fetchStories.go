@@ -8,7 +8,7 @@ import (
 )
 
 // FetchStories gets all the stories from the database
-func (s *StoryDB) FetchStories(sort string, order string, offset int64, limit int64) ([]models.Story, error) {
+func (s StoryDB) FetchStories(sort string, order string, offset int64, limit int64) ([]models.Story, error) {
 	var results []models.Story
 
 	// Get all records

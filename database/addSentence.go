@@ -5,7 +5,7 @@ import (
 )
 
 // AddToSentence adds words to form a sentence
-func (s *StoryDB) AddToSentence(word string) (sentenceID int, err error) {
+func (s StoryDB) AddToSentence(word string) (sentenceID int, err error) {
 
 	// Get the unfinished sentence id
 	sentenceStmt, err := s.db.Query("select IFNULL(max(sentence_id), 0) from sentence group by sentence_id having count(word) < 15 order by sentence_id desc;")

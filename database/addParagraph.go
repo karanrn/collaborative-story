@@ -5,7 +5,7 @@ import (
 )
 
 // AddToParagraph adds sentence to a paragraph
-func (s *StoryDB) AddToParagraph(sentenceID int) (paragraphID int, err error) {
+func (s StoryDB) AddToParagraph(sentenceID int) (paragraphID int, err error) {
 
 	// Get the unfinished paragraph
 	var startParagraph int

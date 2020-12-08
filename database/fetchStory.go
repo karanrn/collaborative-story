@@ -8,7 +8,7 @@ import (
 )
 
 // FetchStory retruns specific story requested
-func (s *StoryDB) FetchStory(storyID string) (models.DetailedStory, error) {
+func (s StoryDB) FetchStory(storyID string) (models.DetailedStory, error) {
 
 	var story models.DetailedStory
 	// Get story details from story table

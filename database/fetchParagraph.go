@@ -7,7 +7,7 @@ import (
 )
 
 // FetchParagraphs returns/fetches paragraphs of the story
-func (s *StoryDB) FetchParagraphs(start int, end int, isComplete bool) ([]models.Paragraph, error) {
+func (s StoryDB) FetchParagraphs(start int, end int, isComplete bool) ([]models.Paragraph, error) {
 	var paraQuery string
 	// Consideration for unfinished story
 	if !isComplete {

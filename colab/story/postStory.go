@@ -11,7 +11,7 @@ import (
 )
 
 // PostStory creates and updates story
-func PostStory(s *database.StoryDB) http.HandlerFunc {
+func PostStory(s database.StoryDB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var reqWord map[string]string
 

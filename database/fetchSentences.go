@@ -5,7 +5,7 @@ import (
 )
 
 // FetchSentences gets all the sentences of the paragraph
-func (s *StoryDB) FetchSentences(start int, end int, isComplete bool) ([]string, error) {
+func (s StoryDB) FetchSentences(start int, end int, isComplete bool) ([]string, error) {
 	var words []string
 	var sentenceQuery string
 	// Consideration for unfinished paragraph
