@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"CollaborativeStory/database"
 	"CollaborativeStory/helper"
 )
 
@@ -16,7 +15,7 @@ var allowedSortBy = []string{"title", "created_at", "updated_at"}
 var allowedOrdering = []string{"asc", "desc"}
 
 // GetStories lists all the stories from the database
-func GetStories(s database.StoryDB) http.HandlerFunc {
+func (s ColabStory) GetStories() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var limit, offset int64
 		var sort, order string
@@ -75,7 +74,7 @@ func GetStories(s database.StoryDB) http.HandlerFunc {
 			order = allowedOrdering[0]
 		}
 
-		results, err := s.FetchStories(sort, order, offset, limit)
+		results, err := s.Database.FetchStories(sort, order, offset, limit)
 		if err != nil {
 			log.Printf("error: %v", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)

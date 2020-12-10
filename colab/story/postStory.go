@@ -7,11 +7,10 @@ import (
 	"strings"
 
 	"CollaborativeStory/colab/models"
-	"CollaborativeStory/database"
 )
 
 // PostStory creates and updates story
-func PostStory(s database.StoryDB) http.HandlerFunc {
+func (s ColabStory) PostStory() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var reqWord map[string]string
 
@@ -32,7 +31,7 @@ func PostStory(s database.StoryDB) http.HandlerFunc {
 		}
 
 		// Get unfinished story
-		story, err := s.GetLatestStory()
+		story, err := s.Database.GetLatestStory()
 		if err != nil {
 			log.Printf("error: %v", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -43,7 +42,7 @@ func PostStory(s database.StoryDB) http.HandlerFunc {
 		var storyResp models.PostResponse
 		if story.Title == "" {
 			// Add title word to the new story
-			err = s.AddStory(story.ID+1, word, true)
+			err = s.Database.AddStory(story.ID+1, word, true)
 			if err != nil {
 				log.Printf("error: %v", err.Error())
 				w.WriteHeader(http.StatusInternalServerError)
@@ -57,7 +56,7 @@ func PostStory(s database.StoryDB) http.HandlerFunc {
 		} else {
 			if story.Title != "" && len(strings.Split(story.Title, " ")) < 2 {
 				// Update title of the story
-				err = s.AddStory(story.ID, word, false)
+				err = s.Database.AddStory(story.ID, word, false)
 				if err != nil {
 					log.Printf("error: %v", err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
@@ -70,7 +69,7 @@ func PostStory(s database.StoryDB) http.HandlerFunc {
 				storyResp.CurrentSentence = ""
 			} else {
 				// Add word to sentence of the story
-				sentenceID, err := s.AddToSentence(word)
+				sentenceID, err := s.Database.AddToSentence(word)
 				if err != nil {
 					log.Printf("error: %v", err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
@@ -79,7 +78,7 @@ func PostStory(s database.StoryDB) http.HandlerFunc {
 				}
 
 				// Add/Update paragraph of the story
-				paragraphID, err := s.AddToParagraph(sentenceID)
+				paragraphID, err := s.Database.AddToParagraph(sentenceID)
 				if err != nil {
 					log.Printf("error: %v", err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
@@ -89,7 +88,7 @@ func PostStory(s database.StoryDB) http.HandlerFunc {
 
 				if story.StartParagraph == 0 {
 					// Start a new story
-					err = s.UpdateStoryParagraph(story.ID, paragraphID, false)
+					err = s.Database.UpdateStoryParagraph(story.ID, paragraphID, false)
 					if err != nil {
 						log.Printf("error: %v", err.Error())
 						w.WriteHeader(http.StatusInternalServerError)
@@ -100,7 +99,7 @@ func PostStory(s database.StoryDB) http.HandlerFunc {
 
 				if story.StartParagraph != 0 && (paragraphID-story.StartParagraph) == 7 {
 					// End the story
-					err = s.UpdateStoryParagraph(story.ID, paragraphID, true)
+					err = s.Database.UpdateStoryParagraph(story.ID, paragraphID, true)
 					if err != nil {
 						log.Printf("error: %v", err.Error())
 						w.WriteHeader(http.StatusInternalServerError)
@@ -110,7 +109,7 @@ func PostStory(s database.StoryDB) http.HandlerFunc {
 				}
 
 				// Update the story timestamp (updated_at)
-				err = s.UpdateStoryTimestamp(story.ID)
+				err = s.Database.UpdateStoryTimestamp(story.ID)
 				if err != nil {
 					log.Printf("error: %v", err.Error())
 					w.WriteHeader(http.StatusInternalServerError)

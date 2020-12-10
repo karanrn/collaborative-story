@@ -34,3 +34,4 @@ I would
 ---
 ## Further reading - 
 1. https://www.alexedwards.net/blog/organising-database-access
+2. https://blog.lamida.org/mocking-in-golang-using-testify/

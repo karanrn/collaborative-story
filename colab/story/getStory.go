@@ -8,18 +8,17 @@ import (
 	"github.com/gorilla/mux"
 
 	"CollaborativeStory/colab/models"
-	"CollaborativeStory/database"
 )
 
 // GetStory gets the specific story basis story_id
-func GetStory(s database.StoryDB) http.HandlerFunc {
+func (s ColabStory) GetStory() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		storyID := mux.Vars(r)["id"]
 
 		var resStory models.DetailedStory
 
 		// Get story details from story table
-		resStory, err := s.FetchStory(storyID)
+		resStory, err := s.Database.FetchStory(storyID)
 		if err != nil {
 			log.Printf("error: %v", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -42,7 +41,7 @@ func GetStory(s database.StoryDB) http.HandlerFunc {
 				isParagraphComplete = true
 			}
 
-			allParagraphs, err := s.FetchParagraphs(resStory.StartParagraph, resStory.EndParagraph, isParagraphComplete)
+			allParagraphs, err := s.Database.FetchParagraphs(resStory.StartParagraph, resStory.EndParagraph, isParagraphComplete)
 			if err != nil {
 				log.Printf("error: %v", err.Error())
 				w.WriteHeader(http.StatusInternalServerError)
@@ -57,7 +56,7 @@ func GetStory(s database.StoryDB) http.HandlerFunc {
 					isSentenceComplete = true
 				}
 
-				pg.Sentences, err = s.FetchSentences(pg.StartSentence, pg.EndSentence, isSentenceComplete)
+				pg.Sentences, err = s.Database.FetchSentences(pg.StartSentence, pg.EndSentence, isSentenceComplete)
 				if err != nil {
 					log.Printf("error: %v", err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
