@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
 	"CollaborativeStory/colab/models"
@@ -117,12 +118,8 @@ func TestFetchSentences(t *testing.T) {
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
 
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
-	}
+	assert.Equal(t, rr.Code, http.StatusOK)
 
 	expected := `"{\"id\":1,\"title\":\"hello world\",\"created_at\":\"2020-12-08T12:13:42Z\",\"updated_at\":\"2020-12-08T13:13:42Z\",\"paragraphs\":[{\"sentences\":[\"hello\",\"world!\",\"welcome\",\"john\"]},{\"sentences\":[\"world\",\"is\",\"beautiful,\",\"john\"]}]}"` + "\n"
-	if rr.Body.String() != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), expected)
-	}
+	assert.Equal(t, rr.Body.String(), expected)
 }
