@@ -1,4 +1,4 @@
-package main
+package story
 
 import (
 	"net/http"
@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"CollaborativeStory/colab/models"
-	"CollaborativeStory/colab/story"
 )
 
 type StoryDBMock struct {
@@ -106,7 +105,7 @@ func TestFetchSentences(t *testing.T) {
 	// Mock FetchStory
 	mockDB.On("FetchStory", "1").Return(testStory, nil)
 
-	csMock := story.ColabStory{Database: &mockDB}
+	csMock := ColabStory{Database: &mockDB}
 
 	r := mux.NewRouter()
 	r.HandleFunc("/stories/{id:[0-9]+}", csMock.GetStory())
