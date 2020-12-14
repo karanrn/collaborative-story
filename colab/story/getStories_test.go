@@ -27,7 +27,6 @@ func TestGetStories(t *testing.T) {
 
 	csMock := ColabStory{Database: &mockDB}
 
-	// Test for good case
 	var req *http.Request
 	var err error
 	var rr *httptest.ResponseRecorder
