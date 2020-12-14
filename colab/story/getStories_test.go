@@ -41,6 +41,7 @@ func TestGetStories(t *testing.T) {
 		{"/stories", http.StatusOK, `"{'limit': 100, 'offset': 0, 'count': 1, 'results': [{\"ID\":1,\"Title\":\"Hello World!\",\"created_at\":\"2020-12-08T12:13:42Z\",\"updated_at\":\"2020-12-08T13:13:42Z\"}] }"` + "\n"},
 		{"/stories?limit=str", http.StatusBadRequest, `"{'error': 'limit is not an integer'}"` + "\n"},
 		{"/stories?limit=10", http.StatusOK, `"{'limit': 10, 'offset': 0, 'count': 1, 'results': [{\"ID\":1,\"Title\":\"Hello World!\",\"created_at\":\"2020-12-08T12:13:42Z\",\"updated_at\":\"2020-12-08T13:13:42Z\"}] }"` + "\n"},
+		{"/stories?offset=str", http.StatusBadRequest, `"{'error': 'offset is not an integer'}"` + "\n"},
 		{"/stories?sort=hello", http.StatusBadRequest, `"{'error': 'sort should be among these values [title created_at updated_at]'}"` + "\n"},
 		{"/stories?order=kkk", http.StatusBadRequest, `"{'error': 'order should be among these values [asc desc]'}"` + "\n"},
 	}
