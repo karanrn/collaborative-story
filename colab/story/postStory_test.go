@@ -26,13 +26,14 @@ func TestPostStory(t *testing.T) {
 	testData := []struct {
 		request      []byte
 		expectedCode int
-		expected     string
+		expectedData string
 	}{
 		{[]byte(`{ "word": "Hello" }`), http.StatusOK, `"{\"id\":1,\"title\":\"Hello\",\"current_sentence\":\"\"}"` + "\n"},
 		{[]byte(`{ "word": "Hello World" }`), http.StatusBadRequest, `"{'error': 'multiple words sent'}"` + "\n"},
 	}
 
 	handler := http.HandlerFunc(csMock.PostStory())
+
 	for _, tt := range testData {
 		req, err = http.NewRequest("POST", "/add", bytes.NewBuffer(tt.request))
 		if err != nil {
@@ -44,6 +45,6 @@ func TestPostStory(t *testing.T) {
 		handler.ServeHTTP(rr, req)
 
 		assert.Equal(t, rr.Code, tt.expectedCode)
-		assert.Equal(t, rr.Body.String(), tt.expected)
+		assert.Equal(t, rr.Body.String(), tt.expectedData)
 	}
 }

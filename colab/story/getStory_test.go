@@ -108,29 +108,32 @@ func TestGetStory(t *testing.T) {
 
 	csMock := ColabStory{Database: &mockDB}
 
+	var req *http.Request
+	var err error
+	var rr *httptest.ResponseRecorder
+
 	r := mux.NewRouter()
 	r.HandleFunc("/stories/{id:[0-9]+}", csMock.GetStory())
-	req, err := http.NewRequest("GET", "/stories/1", nil)
-	if err != nil {
-		t.Fatal(err)
+
+	testData := []struct {
+		url          string
+		expectedCode int
+		expectedData string
+	}{
+		{"/stories/1", http.StatusOK, `"{\"id\":1,\"title\":\"hello world\",\"created_at\":\"2020-12-08T12:13:42Z\",\"updated_at\":\"2020-12-08T13:13:42Z\",\"paragraphs\":[{\"sentences\":[\"hello\",\"world!\",\"welcome\",\"john\"]},{\"sentences\":[\"world\",\"is\",\"beautiful,\",\"john\"]}]}"` + "\n"},
+		{"/stories/2", http.StatusNotFound, `"{'error': 'story does not exist'}"` + "\n"},
 	}
 
-	rr := httptest.NewRecorder()
-	r.ServeHTTP(rr, req)
+	for _, tt := range testData {
+		req, err = http.NewRequest("GET", tt.url, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	assert.Equal(t, rr.Code, http.StatusOK)
+		rr = httptest.NewRecorder()
+		r.ServeHTTP(rr, req)
 
-	expected := `"{\"id\":1,\"title\":\"hello world\",\"created_at\":\"2020-12-08T12:13:42Z\",\"updated_at\":\"2020-12-08T13:13:42Z\",\"paragraphs\":[{\"sentences\":[\"hello\",\"world!\",\"welcome\",\"john\"]},{\"sentences\":[\"world\",\"is\",\"beautiful,\",\"john\"]}]}"` + "\n"
-	assert.Equal(t, rr.Body.String(), expected)
-
-	// Test for wrong storyId
-	req, err = http.NewRequest("GET", "/stories/2", nil)
-	if err != nil {
-		t.Fatal(err)
+		assert.Equal(t, rr.Code, tt.expectedCode)
+		assert.Equal(t, rr.Body.String(), tt.expectedData)
 	}
-	rr = httptest.NewRecorder()
-	r.ServeHTTP(rr, req)
-	expectedError := `"{'error': 'story does not exist'}"` + "\n"
-	assert.Equal(t, rr.Code, http.StatusNotFound)
-	assert.Equal(t, rr.Body.String(), expectedError)
 }

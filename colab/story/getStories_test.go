@@ -35,7 +35,7 @@ func TestGetStories(t *testing.T) {
 	testData := []struct {
 		url          string
 		expectedCode int
-		expected     string
+		expectedData string
 	}{
 		{"/stories", http.StatusOK, `"{'limit': 100, 'offset': 0, 'count': 1, 'results': [{\"ID\":1,\"Title\":\"Hello World!\",\"created_at\":\"2020-12-08T12:13:42Z\",\"updated_at\":\"2020-12-08T13:13:42Z\"}] }"` + "\n"},
 		{"/stories?limit=str", http.StatusBadRequest, `"{'error': 'limit is not an integer'}"` + "\n"},
@@ -44,9 +44,9 @@ func TestGetStories(t *testing.T) {
 		{"/stories?sort=hello", http.StatusBadRequest, `"{'error': 'sort should be among these values [title created_at updated_at]'}"` + "\n"},
 		{"/stories?order=kkk", http.StatusBadRequest, `"{'error': 'order should be among these values [asc desc]'}"` + "\n"},
 	}
-	// Test for wrong limit requested
 
 	handler := http.HandlerFunc(csMock.GetStories())
+
 	for _, tt := range testData {
 		req, err = http.NewRequest("GET", tt.url, nil)
 		if err != nil {
@@ -56,8 +56,6 @@ func TestGetStories(t *testing.T) {
 		handler.ServeHTTP(rr, req)
 
 		assert.Equal(t, rr.Code, tt.expectedCode)
-		assert.Equal(t, rr.Body.String(), tt.expected)
+		assert.Equal(t, rr.Body.String(), tt.expectedData)
 	}
-
-	//expected = `"{'error': 'limit is not an integer'}"` + "\n"
 }
