@@ -64,7 +64,6 @@ func (s ColabStory) GetStories() http.HandlerFunc {
 			if helper.Contains(query.Get("order"), allowedOrdering) {
 				sort = query.Get("sort")
 			} else {
-				log.Printf("error: %v", err.Error())
 				w.WriteHeader(http.StatusBadRequest)
 				json.NewEncoder(w).Encode(fmt.Sprintf("{'error': 'order should be among these values %v'}", allowedOrdering))
 				return

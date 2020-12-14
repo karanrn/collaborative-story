@@ -68,7 +68,7 @@ func (d *StoryDBMock) UpdateStoryTimestamp(storyID int) error {
 
 // Test
 
-func TestFetchSentences(t *testing.T) {
+func TestGetStory(t *testing.T) {
 	mockDB := StoryDBMock{}
 	sentences := [][]string{{"hello", "world!", "welcome", "john"},
 		{"world", "is", "beautiful,", "john"}}
@@ -104,6 +104,7 @@ func TestFetchSentences(t *testing.T) {
 
 	// Mock FetchStory
 	mockDB.On("FetchStory", "1").Return(testStory, nil)
+	mockDB.On("FetchStory", "2").Return(models.DetailedStory{}, nil)
 
 	csMock := ColabStory{Database: &mockDB}
 
@@ -121,4 +122,15 @@ func TestFetchSentences(t *testing.T) {
 
 	expected := `"{\"id\":1,\"title\":\"hello world\",\"created_at\":\"2020-12-08T12:13:42Z\",\"updated_at\":\"2020-12-08T13:13:42Z\",\"paragraphs\":[{\"sentences\":[\"hello\",\"world!\",\"welcome\",\"john\"]},{\"sentences\":[\"world\",\"is\",\"beautiful,\",\"john\"]}]}"` + "\n"
 	assert.Equal(t, rr.Body.String(), expected)
+
+	// Test for wrong storyId
+	req, err = http.NewRequest("GET", "/stories/2", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rr = httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+	expectedError := `"{'error': 'story does not exist'}"` + "\n"
+	assert.Equal(t, rr.Code, http.StatusNotFound)
+	assert.Equal(t, rr.Body.String(), expectedError)
 }
